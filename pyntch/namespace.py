@@ -95,7 +95,8 @@ class Namespace(object):
     from pyntch.config import ErrorConfig
 
     if isinstance(tree, ast.Module):
-      self.register_names(tree.body)
+        for t in tree.body:
+            self.register_names(t)
       
     # global
     elif isinstance(tree, ast.Global):
@@ -114,8 +115,8 @@ class Namespace(object):
         self.register_names(base)
     # assign
     elif isinstance(tree, ast.Assign):
-      for node in tree.nodes:
-        self.register_names(tree.expr)
+      for node in tree.targets:
+        self.register_names(tree.value)
         self.register_names(node)
     elif isinstance(tree, ast.AugAssign):
       self.register_names(tree.expr)
@@ -142,9 +143,9 @@ class Namespace(object):
       self.register_names(tree.body)
 
     # (mutliple statements)
-#    elif isinstance(tree, ast.Stmt):
-#      for stmt in tree.nodes:
-#        self.register_names(stmt)
+    elif isinstance(tree, list):
+      for stmt in tree:
+        self.register_names(stmt)
 
     # if, elif, else
     elif isinstance(tree, ast.If):
@@ -238,8 +239,12 @@ class Namespace(object):
       self.register_names(tree.value)
 
     # expressions
-#    elif isinstance(tree, ast.Const):
-#      pass
+    elif isinstance(tree, ast.Num):
+      pass
+    elif isinstance(tree, ast.Str):
+      pass
+    elif isinstance(tree, ast.Bytes):
+      pass
     elif isinstance(tree, ast.Name):
       pass
     elif isinstance(tree, ast.Call):
@@ -248,7 +253,7 @@ class Namespace(object):
         self.register_names(arg1)
       if tree.starargs:
         self.register_names(tree.star_args)
-      if tree.dstar_args:
+      if tree.kwargs:
         self.register_names(tree.kwargs)
     elif isinstance(tree, ast.keyword):
       self.register_names(tree.value)
@@ -349,14 +354,10 @@ class Namespace(object):
     self.register_names(tree)
     if not isinstance(tree, ast.Module): return
     # find '__all__' property
-    node = tree.node
-    if type(node) is list:
-      nodes = node
-    else:
-      nodes = [node]
+    nodes = tree.body
     for node in nodes:
       if not isinstance(node, ast.Assign): continue
-      if not isinstance(node.expr, ast.List): continue
+      if not isinstance(node.value, ast.List): continue
       for n in node.nodes:
         if isinstance(n, ast.Assign) and n.name == '__all__':
           self.all_names = [ n.value for n in node.expr.nodes

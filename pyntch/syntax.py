@@ -26,14 +26,14 @@ class SliceObject(ExpressionNode):
 ##
 def build_assert(reporter, frame, space, tree, arg, evals):
   # "assert isinstance() and isinstance() and ...
-  if isinstance(tree, ast.CallFunc):
+  if isinstance(tree, ast.Call):
     tests = [ tree ]
   else:
     return
   for node in tests:
-    if (isinstance(node, ast.CallFunc) and
-        isinstance(node.node, ast.Name) and
-        node.node.name == 'isinstance' and
+    if (isinstance(node, ast.Call) and
+        isinstance(node.func, ast.Name) and
+        node.func.id == 'isinstance' and
         len(node.args) == 2):
       (a,b) = node.args
       if isinstance(b, ast.Tuple):
@@ -44,7 +44,7 @@ def build_assert(reporter, frame, space, tree, arg, evals):
       if isinstance(a, ast.Name):
         checker = space[a.name]
         checker.setup(frame, validtypes, arg)
-      elif arg and isinstance(arg, ast.Const):
+      elif arg and isinstance(arg, (ast.Num, ast.Str)):
         checker = TypeChecker(frame, validtypes, arg.value)
       else:
         checker = TypeChecker(frame, validtypes, repr(a))
@@ -55,16 +55,16 @@ def build_assert(reporter, frame, space, tree, arg, evals):
 ##  build_assign(reporter, frame, namespace, node1, node2, evals)
 ##
 def build_assign(reporter, frame, space, n, v, evals):
-  if isinstance(n, ast.AssName) or isinstance(n, ast.Name):
-    space[n.name].bind(v)
-  elif isinstance(n, ast.AssTuple) or isinstance(n, ast.AssList):
-    tup = TupleUnpack(ExecutionFrame(frame, n), n, v, len(n.nodes))
-    for (i,c) in enumerate(n.nodes):
-      build_assign(reporter, frame, space, c, tup.get_nth(i), evals)
-  elif isinstance(n, (ast.AssAttr, ast.Getattr)):
-    obj = build_expr(reporter, frame, space, n.expr, evals)
-    AttrAssign(ExecutionFrame(frame, n), n, obj, n.attrname, v)
-  elif isinstance(n, ast.Subscript):
+  if isinstance(n, ast.Name):
+    space[n.id].bind(v) # TODO
+#  elif isinstance(n, ast.AssTuple) or isinstance(n, ast.AssList):
+#    tup = TupleUnpack(ExecutionFrame(frame, n), n, v, len(n.nodes))
+#    for (i,c) in enumerate(n.nodes):
+#      build_assign(reporter, frame, space, c, tup.get_nth(i), evals)
+#  elif isinstance(n, (ast.AssAttr, ast.Getattr)):
+#    obj = build_expr(reporter, frame, space, n.expr, evals)
+#    AttrAssign(ExecutionFrame(frame, n), n, obj, n.attrname, v)
+  if isinstance(n, ast.Subscript):
     obj = build_expr(reporter, frame, space, n.expr, evals)
     subs = [ build_expr(reporter, frame, space, expr, evals) for expr in n.subs ]
     if len(subs) == 1:
@@ -92,23 +92,26 @@ def build_expr(reporter, frame, space, tree, evals):
   from pyntch.basic_types import BUILTIN_OBJECT, IntType
   from pyntch.aggregate_types import IterType, GeneratorType, ListType, DictType, TupleType
 
-  if isinstance(tree, ast.Const):
-    typename = type(tree.value).__name__
+  if isinstance(tree, ast.Num):
+    typename = type(tree.n).__name__
+    expr = BUILTIN_OBJECT[typename]
+  elif isinstance(tree, (ast.Str, ast.Bytes)):
+    typename = type(tree.s).__name__
     expr = BUILTIN_OBJECT[typename]
 
   elif isinstance(tree, ast.Name):
     try:
-      expr = space[tree.name]
+      expr = space[tree.id]
     except KeyError:
       ExecutionFrame(frame, tree).raise_expt(ErrorConfig.NameUndefined(tree.name))
       expr = UndefinedTypeNode(tree.name)
 
-  elif isinstance(tree, ast.CallFunc):
+  elif isinstance(tree, ast.Call):
     func = build_expr(reporter, frame, space, tree.node, evals)
     args = tuple( build_expr(reporter, frame, space, arg1, evals)
-                  for arg1 in tree.args if not isinstance(arg1, ast.Keyword) )
+                  for arg1 in tree.args.args if not isinstance(arg1, ast.keyword) )
     kwargs = dict( (arg1.name, build_expr(reporter, frame, space, arg1.expr, evals))
-                   for arg1 in tree.args if isinstance(arg1, ast.Keyword) )
+                   for arg1 in tree.args.args if isinstance(arg1, ast.keyword) )
     star = dstar = None
     if tree.star_args:
       star = build_expr(reporter, frame, space, tree.star_args, evals)
@@ -116,9 +119,9 @@ def build_expr(reporter, frame, space, tree, evals):
       dstar = build_expr(reporter, frame, space, tree.dstar_args, evals)
     expr = FunCall(ExecutionFrame(frame, tree), tree, func, args, kwargs, star, dstar)
 
-  elif isinstance(tree, ast.Getattr):
-    obj = build_expr(reporter, frame, space, tree.expr, evals)
-    expr = AttrRef(ExecutionFrame(frame, tree), tree, obj, tree.attrname)
+  elif isinstance(tree, ast.Attribute):
+    obj = build_expr(reporter, frame, space, tree.value, evals)
+    expr = AttrRef(ExecutionFrame(frame, tree), tree, obj, tree.attr)
 
   elif isinstance(tree, ast.Subscript):
     obj = build_expr(reporter, frame, space, tree.expr, evals)
@@ -138,9 +141,9 @@ def build_expr(reporter, frame, space, tree, evals):
     assert lower != None and upper != None
     expr = SliceRef(ExecutionFrame(frame, tree), tree, obj, [lower, upper])
 
-  elif isinstance(tree, ast.Sliceobj):
-    elements = [ build_expr(reporter, frame, space, node, evals) for node in tree.nodes ]
-    expr = SliceObject(ExecutionFrame(frame, tree), tree, elements)
+#  elif isinstance(tree, ast.Sliceobj):
+#    elements = [ build_expr(reporter, frame, space, node, evals) for node in tree.nodes ]
+#    expr = SliceObject(ExecutionFrame(frame, tree), tree, elements)
     
   elif isinstance(tree, ast.Tuple):
     elements = [ build_expr(reporter, frame, space, node, evals) for node in tree.nodes ]
@@ -161,18 +164,16 @@ def build_expr(reporter, frame, space, tree, evals):
     expr = DictType.create_dict(items)
 
   # +, -, *, /, %, //, **, <<, >>
-  elif isinstance(tree, (ast.Add, ast.Sub, ast.Mul, ast.Div,
-                         ast.Mod, ast.FloorDiv, ast.Power,
-                         ast.LeftShift, ast.RightShift)):
+  elif isinstance(tree, (ast.BinOp)):
     op = tree.__class__.__name__
     left = build_expr(reporter, frame, space, tree.left, evals)
     right = build_expr(reporter, frame, space, tree.right, evals)
     expr = BinaryOp(ExecutionFrame(frame, tree), tree, op, left, right)
     
   # &, |, ^
-  elif isinstance(tree, (ast.Bitand, ast.Bitor, ast.Bitxor)):
+  elif isinstance(tree, (ast.BoolOp)):
     op = tree.__class__.__name__
-    nodes = [ build_expr(reporter, frame, space, node, evals) for node in tree.nodes ]
+    nodes = [ build_expr(reporter, frame, space, node, evals) for node in tree.values ]
     expr = nodes.pop(0)
     for right in nodes:
       expr = BinaryOp(ExecutionFrame(frame, tree), tree, op, expr, right)
@@ -186,9 +187,9 @@ def build_expr(reporter, frame, space, tree, evals):
       left = right
 
   # +,-,~
-  elif isinstance(tree, (ast.UnaryAdd, ast.UnarySub, ast.Invert)):
+  elif isinstance(tree, (ast.UnaryOp)):
     op = tree.__class__.__name__
-    value = build_expr(reporter, frame, space, tree.expr, evals)
+    value = build_expr(reporter, frame, space, tree.operand, evals)
     expr = UnaryOp(ExecutionFrame(frame, tree), tree, op, value)
 
   # and, or
@@ -219,17 +220,17 @@ def build_expr(reporter, frame, space, tree, evals):
       for qif in qual.ifs:
         build_expr(reporter, frame, space, qif.test, evals)
 
-  # generator expression
-  elif isinstance(tree, ast.GenExpr):
-    gen = tree.code
-    elements = [ build_expr(reporter, frame, space, gen.expr, evals) ]
-    expr = IterType.create_iter(CompoundTypeNode(elements))
-    for qual in gen.quals:
-      seq = build_expr(reporter, frame, space, qual.iter, evals)
-      elem = IterElement(ExecutionFrame(frame, qual.iter), qual.iter, seq)
-      build_assign(reporter, frame, space, qual.assign, elem, evals)
-      for qif in qual.ifs:
-        build_expr(reporter, frame, space, qif.test, evals)
+  # generator expression TODO
+#  elif isinstance(tree, ast.GeneratorExp):
+#    gen = tree.code
+#    elements = [ build_expr(reporter, frame, space, gen.expr, evals) ]
+#    expr = IterType.create_iter(CompoundTypeNode(elements))
+#    for qual in gen.quals:
+#      seq = build_expr(reporter, frame, space, qual.iter, evals)
+#      elem = IterElement(ExecutionFrame(frame, qual.iter), qual.iter, seq)
+#      build_assign(reporter, frame, space, qual.assign, elem, evals)
+#      for qif in qual.ifs:
+#        build_expr(reporter, frame, space, qif.test, evals)
 
   # yield (for python 2.5)
   elif isinstance(tree, ast.Yield):
@@ -246,9 +247,9 @@ def build_expr(reporter, frame, space, tree, evals):
     expr = IfExpOp(ExecutionFrame(frame, tree), tree, test, then, else_)
 
   # Backquote (unsupported)
-  elif isinstance(tree, ast.Backquote):
-    ExecutionFrame(frame, tree).raise_expt(ErrorConfig.NotSupported('backquote notation'))
-    expr = UndefinedTypeNode('backquote')
+#  elif isinstance(tree, ast.Backquote):
+#    ExecutionFrame(frame, tree).raise_expt(ErrorConfig.NotSupported('backquote notation'))
+#    expr = UndefinedTypeNode('backquote')
 
   # Ellipsis
   elif isinstance(tree, ast.Ellipsis):
@@ -273,23 +274,34 @@ def build_stmt(reporter, frame, space, tree, evals, isfuncdef=False, parent_spac
   assert isinstance(frame, ExecutionFrame)
 
   if isinstance(tree, ast.Module):
-    build_stmt(reporter, frame, space, tree.node, evals)
+       build_stmt(reporter, frame, space, tree.body, evals)
+  
+  elif isinstance(tree, list):
+    stmt = None
+    exit = False
+    for stmt in tree:
+      exit = build_stmt(reporter, frame, space, stmt, evals, parent_space=parent_space)
+    if isfuncdef and not exit:
+      # if the last statement is not a Return or Raise
+      value = NoneType.get_object()
+      evals.append(('r', value))
+    return exit
   
   # def
-  elif isinstance(tree, ast.Function):
+  elif isinstance(tree, ast.FunctionDef):
     name = tree.name
-    defaults = [ build_expr(reporter, frame, space, value, evals) for value in tree.defaults ]
+    defaults = [ build_expr(reporter, frame, space, value, evals) for value in tree.args.defaults ]
     parent_space = parent_space or space # class definition
-    func = FuncType(reporter, frame, parent_space, tree, name, tree.argnames,
-                    defaults, tree.varargs, tree.kwargs, tree)
-    if tree.decorators:
-      for node in tree.decorators:
+    func = FuncType(reporter, frame, parent_space, tree, name, map(lambda arg:arg.arg, tree.args),
+                    defaults, tree.args.varargs, tree.args.kwargs, tree)
+    if tree.decorator_list:
+      for node in tree.decorator_list:
         decor = build_expr(reporter, frame, space, node, evals)
         func = FunCall(ExecutionFrame(frame, node), node, decor, (func,))
     space[name].bind(func)
 
   # class
-  elif isinstance(tree, ast.Class):
+  elif isinstance(tree, ast.ClassDef):
     name = tree.name
     bases = [ build_expr(reporter, frame, space, base, evals) for base in tree.bases ]
     klass = PythonClassType(reporter, frame, space, tree, name, bases, evals, tree)
@@ -297,8 +309,8 @@ def build_stmt(reporter, frame, space, tree, evals, isfuncdef=False, parent_spac
 
   # assign
   elif isinstance(tree, ast.Assign):
-    for n in tree.nodes:
-      value = build_expr(reporter, frame, space, tree.expr, evals)
+    for n in tree.targets:
+      value = build_expr(reporter, frame, space, tree.value, evals)
       build_assign(reporter, frame, space, n, value, evals)
 
   # augassign
@@ -325,10 +337,10 @@ def build_stmt(reporter, frame, space, tree, evals, isfuncdef=False, parent_spac
     return True
 
   # (mutliple statements)
-  elif isinstance(tree, ast.Stmt):
+  elif isinstance(tree, list):
     stmt = None
     exit = False
-    for stmt in tree.nodes:
+    for stmt in tree:
       exit = build_stmt(reporter, frame, space, stmt, evals, parent_space=parent_space)
     if isfuncdef and not exit:
       # if the last statement is not a Return or Raise
@@ -366,7 +378,7 @@ def build_stmt(reporter, frame, space, tree, evals, isfuncdef=False, parent_spac
     return exit
 
   # try ... except
-  elif isinstance(tree, ast.TryExcept):
+  elif isinstance(tree, ast.Try):
     catcher = ExceptionCatcher(frame)
     for (expr,e,stmt) in tree.handlers:
       if expr:
@@ -383,9 +395,9 @@ def build_stmt(reporter, frame, space, tree, evals, isfuncdef=False, parent_spac
     return exit
 
   # try ... finally
-  elif isinstance(tree, ast.TryFinally):
-    exit = build_stmt(reporter, frame, space, tree.body, evals)
-    exit = build_stmt(reporter, frame, space, tree.final, evals) and exit
+#  elif isinstance(tree, ast.TryFinally):
+#    exit = build_stmt(reporter, frame, space, tree.body, evals)
+#    exit = build_stmt(reporter, frame, space, tree.final, evals) and exit
     return exit
 
   # raise
@@ -404,14 +416,14 @@ def build_stmt(reporter, frame, space, tree, evals, isfuncdef=False, parent_spac
 #    return True # removed by 2to3
 
   # printnl
-  elif isinstance(tree, (ast.Print, ast.Printnl)):
-    for node in tree.nodes:
-      value = build_expr(reporter, frame, space, node, evals)
-      StrType.StrConverter(ExecutionFrame(frame, node), tree, value)
+#  elif isinstance(tree, (ast.Print, ast.Printnl)):
+#    for node in tree.nodes:
+#      value = build_expr(reporter, frame, space, node, evals)
+#      StrType.StrConverter(ExecutionFrame(frame, node), tree, value)
 
   # discard
-  elif isinstance(tree, ast.Discard):
-    value = build_expr(reporter, frame, space, tree.expr, evals)
+#  elif isinstance(tree, ast.Discard):
+#    value = build_expr(reporter, frame, space, tree.expr, evals)
 
   # pass, break, continue
   elif isinstance(tree, (ast.Pass, ast.Break, ast.Continue)):
@@ -430,9 +442,9 @@ def build_stmt(reporter, frame, space, tree, evals, isfuncdef=False, parent_spac
       except ModuleNotFound as e:
         ErrorConfig.module_not_found(e.name)
         
-  elif isinstance(tree, ast.From):
+  elif isinstance(tree, ast.ImportFrom):
     try:
-      modname = tree.modname
+      modname = tree.module
       modules = tree._module.load_module(modname)
       for (name,asname) in tree.names:
         if name != '*':
@@ -456,14 +468,8 @@ def build_stmt(reporter, frame, space, tree, evals, isfuncdef=False, parent_spac
     build_stmt(reporter, frame, space, tree.body, evals)
 
   # del
-  elif isinstance(tree, ast.AssName):
-    pass
-  elif isinstance(tree, ast.AssTuple):
-    pass
-  elif isinstance(tree, ast.AssList):
-    pass
-  elif isinstance(tree, ast.AssAttr):
-    build_expr(reporter, frame, space, tree.expr, evals)
+  elif isinstance(tree, ast.Assign):
+    build_expr(reporter, frame, space, tree.value, evals)
   elif isinstance(tree, ast.Subscript):
     build_expr(reporter, frame, space, tree.expr, evals)
   elif isinstance(tree, ast.Slice):
@@ -482,8 +488,8 @@ def build_stmt(reporter, frame, space, tree, evals, isfuncdef=False, parent_spac
       build_expr(reporter, frame, space, tree.fail, evals)
 
   # unsupported
-  elif isinstance(tree, ast.Exec):
-    ExecutionFrame(frame, tree).raise_expt(ErrorConfig.NotSupported('exec'))
+#  elif isinstance(tree, ast.Exec):
+#    ExecutionFrame(frame, tree).raise_expt(ErrorConfig.NotSupported('exec'))
   
   else:
     raise SyntaxError('unsupported syntax: %r (%s:%r)' % (tree, tree._module.get_path(), tree.lineno))

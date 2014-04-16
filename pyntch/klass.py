@@ -184,9 +184,9 @@ class PythonClassType(ClassType, TreeReporter):
     self.space = Namespace(parent_space, name)
     TreeReporter.__init__(self, parent_reporter)
     ClassType.__init__(self, name, bases)
-    if tree.code:
-      self.space.register_names(tree.code)
-      build_stmt(self, parent_frame, self.space, tree.code, evals, parent_space=parent_space)
+    if tree.body:
+      self.space.register_names(tree.body)
+      build_stmt(self, parent_frame, self.space, tree.body, evals, parent_space=parent_space)
     for (name,var) in self.space:
       # Do not consider the values of attributes inherited from the base class
       # if they are explicitly overriden.
