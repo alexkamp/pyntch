@@ -103,12 +103,12 @@ class Namespace(object):
         self.vars[name] = self.global_space.register_var(name)
 
     # def
-    elif isinstance(tree, ast.Function):
+    elif isinstance(tree, ast.FunctionDef):
       self.register_var(tree.name)
-      for value in tree.defaults:
+      for value in tree.args.defaults:
         self.register_names(value)
     # class
-    elif isinstance(tree, ast.Class):
+    elif isinstance(tree, ast.ClassDef):
       self.register_var(tree.name)
       for base in tree.bases:
         self.register_names(base)
@@ -119,16 +119,9 @@ class Namespace(object):
         self.register_names(node)
     elif isinstance(tree, ast.AugAssign):
       self.register_names(tree.expr)
-    elif isinstance(tree, ast.AssTuple):
+    elif isinstance(tree, ast.Assign):
       for c in tree.nodes:
         self.register_names(c)
-    elif isinstance(tree, ast.AssList):
-      for c in tree.nodes:
-        self.register_names(c)
-    elif isinstance(tree, ast.AssName):
-      self.register_var(tree.name)
-    elif isinstance(tree, ast.AssAttr):
-      pass
     elif isinstance(tree, ast.Subscript):
       self.register_names(tree.expr)
       for sub in tree.subs:
@@ -149,9 +142,9 @@ class Namespace(object):
       self.register_names(tree.body)
 
     # (mutliple statements)
-    elif isinstance(tree, ast.Stmt):
-      for stmt in tree.nodes:
-        self.register_names(stmt)
+#    elif isinstance(tree, ast.Stmt):
+#      for stmt in tree.nodes:
+#        self.register_names(stmt)
 
     # if, elif, else
     elif isinstance(tree, ast.If):
@@ -177,7 +170,7 @@ class Namespace(object):
         self.register_names(tree.else_)
 
     # try ... except
-    elif isinstance(tree, ast.TryExcept):
+    elif isinstance(tree, ast.Try):
       self.register_names(tree.body)
       for (expr,e,stmt) in tree.handlers:
         if expr:
@@ -189,16 +182,15 @@ class Namespace(object):
         self.register_names(tree.else_)
 
     # try ... finally
-    elif isinstance(tree, ast.TryFinally):
-      self.register_names(tree.body)
-      self.register_names(tree.final)
+#    elif isinstance(tree, ast.TryFinally):
+#      self.register_names(tree.body)
+#      self.register_names(tree.final)
 
     # raise
     elif isinstance(tree, ast.Raise):
-      if tree.expr1:
-        self.register_names(tree.expr1)
-      if tree.expr2:
-        self.register_names(tree.expr2)
+      self.register_names(tree.exc)
+      if tree.cause:
+        self.register_names(tree.cause)
         
     # import
     elif isinstance(tree, ast.Import):
@@ -210,10 +202,10 @@ class Namespace(object):
           self.register_var(name)
 
     # from
-    elif isinstance(tree, ast.From):
+    elif isinstance(tree, ast.ImportFrom):
       for (name,asname) in tree.names:
         if name == '*':
-          modname = tree.modname
+          modname = tree.module
           try:
             module = tree._module.load_module(modname)[-1]
             self.import_all(module.space)
@@ -223,60 +215,60 @@ class Namespace(object):
           self.register_var(asname or name)
 
     # print, printnl
-    elif isinstance(tree, (ast.Print, ast.Printnl)):
-      for node in tree.nodes:
-        self.register_names(node)
+#    elif isinstance(tree, (ast.Print, ast.Printnl)):
+#      for node in tree.nodes:
+#        self.register_names(node)
     
     # discard
-    elif isinstance(tree, ast.Discard):
-      self.register_names(tree.expr)
+#    elif isinstance(tree, ast.Discard):
+#      self.register_names(tree.expr)
 
     # other statements
     elif isinstance(tree, ast.Break):
       pass
     elif isinstance(tree, ast.Continue):
       pass
-    elif isinstance(tree, ast.Print):
-      pass
+#    elif isinstance(tree, ast.Print):
+#      pass
     elif isinstance(tree, ast.Yield):
       pass
     elif isinstance(tree, ast.Pass):
       pass
-    elif isinstance(tree, ast.Exec):
-      pass
+    elif isinstance(tree, ast.Expr):
+      self.register_names(tree.value)
 
     # expressions
-    elif isinstance(tree, ast.Const):
-      pass
+#    elif isinstance(tree, ast.Const):
+#      pass
     elif isinstance(tree, ast.Name):
       pass
-    elif isinstance(tree, ast.CallFunc):
-      self.register_names(tree.node)
+    elif isinstance(tree, ast.Call):
+      self.register_names(tree.func)
       for arg1 in tree.args:
         self.register_names(arg1)
-      if tree.star_args:
+      if tree.starargs:
         self.register_names(tree.star_args)
       if tree.dstar_args:
-        self.register_names(tree.dstar_args)
-    elif isinstance(tree, ast.Keyword):
-      self.register_names(tree.expr)
-    elif isinstance(tree, ast.Getattr):
-      self.register_names(tree.expr)
-    elif isinstance(tree, ast.Slice):      
-      self.register_names(tree.expr)
-      if tree.lower:
-        self.register_names(tree.lower)
-      if tree.upper:
-        self.register_names(tree.upper)
-    elif isinstance(tree, ast.Sliceobj):
-      for node in tree.nodes:
-        self.register_names(node)
-    elif isinstance(tree, ast.Tuple):
-      for node in tree.nodes:
-        self.register_names(node)
-    elif isinstance(tree, ast.List):
-      for node in tree.nodes:
-        self.register_names(node)
+        self.register_names(tree.kwargs)
+    elif isinstance(tree, ast.keyword):
+      self.register_names(tree.value)
+    elif isinstance(tree, ast.Attribute):
+      self.register_names(tree.value)
+#    elif isinstance(tree, ast.Slice):      
+#      self.register_names(tree.expr)
+#      if tree.lower:
+#        self.register_names(tree.lower)
+#      if tree.upper:
+#        self.register_names(tree.upper)
+#    elif isinstance(tree, ast.Sliceobj):
+#      for node in tree.nodes:
+#        self.register_names(node)
+#    elif isinstance(tree, ast.Tuple):
+#      for node in tree.nodes:
+#        self.register_names(node)
+#    elif isinstance(tree, ast.List):
+#      for node in tree.nodes:
+#        self.register_names(node)
 #    elif isinstance(tree, ast.Set):
 #      for node in tree.nodes:
 #        self.register_names(node)
@@ -284,21 +276,18 @@ class Namespace(object):
       for (k,v) in tree.items:
         self.register_names(k)
         self.register_names(v)
-    elif isinstance(tree, (ast.Add, ast.Sub, ast.Mul, ast.Div,
-                           ast.Mod, ast.FloorDiv, ast.Power,
-                           ast.LeftShift, ast.RightShift)):
+    elif isinstance(tree, (ast.BinOp)):
       self.register_names(tree.left)
       self.register_names(tree.right)
+    elif isinstance(tree, (ast.BoolOp)):
+            for v in tree.values:
+                self.register_names(v)
     elif isinstance(tree, ast.Compare):
       self.register_names(tree.expr)
       for (_,node) in tree.ops:
         self.register_names(node)
-    elif isinstance(tree, (ast.UnaryAdd, ast.UnarySub, ast.Invert)):
-      self.register_names(tree.expr)
-    elif isinstance(tree, (ast.And, ast.Or,
-                           ast.Bitand, ast.Bitor, ast.Bitxor)):
-      for node in tree.nodes:
-        self.register_names(node)
+    elif isinstance(tree, (ast.UnaryOp)):
+      self.register_names(tree.operand)
     elif isinstance(tree, ast.Not):
       self.register_names(tree.expr)
     elif isinstance(tree, ast.Lambda):
@@ -309,8 +298,8 @@ class Namespace(object):
       self.register_names(tree.test)
       self.register_names(tree.then)
       self.register_names(tree.else_)
-    elif isinstance(tree, ast.Backquote):
-      self.register_names(tree.expr)
+#    elif isinstance(tree, ast.Backquote):
+#      self.register_names(tree.expr)
 
     # list comprehension
     elif isinstance(tree, ast.ListComp):
@@ -322,28 +311,27 @@ class Namespace(object):
           self.register_names(qif.test)
     
     # generator expression
-    elif isinstance(tree, ast.GenExpr):
-      gen = tree.code
-      self.register_names(gen.expr)
-      for qual in gen.quals:
-        self.register_names(qual.iter)
-        self.register_names(qual.assign)
-        for qif in qual.ifs:
-          self.register_names(qif.test)
+    elif isinstance(tree, (ast.GeneratorExp, ast.ListComp, ast.SetComp)):
+      self.register_names(tree.elt)
+      for gen in tree.generators:
+        self.register_names(gen)
+    elif isinstance(tree, (ast.DictComp)):
+      self.register_names(gen.key)
+      self.register_names(gen.value)
+      for gen in tree.generators:
+        self.register_names(gen)
 
     # Assert
     elif isinstance(tree, ast.Assert):
       self.register_names(tree.test)
-      if tree.fail:
-        self.register_names(tree.fail)
-      if isinstance(tree.test, ast.CallFunc):
+      if isinstance(tree.test, ast.Call):
         tests = [ tree.test ]
       else:
         tests = []
       for test in tests:
-        if (isinstance(test, ast.CallFunc) and
-            isinstance(test.node, ast.Name) and
-            test.node.name == 'isinstance' and
+        if (isinstance(test, ast.Call) and
+            isinstance(test.func, ast.Name) and
+            test.func.id == 'isinstance' and
             len(test.args) == 2):
           (a,b) = test.args
           if isinstance(a, ast.Name):
@@ -362,17 +350,18 @@ class Namespace(object):
     if not isinstance(tree, ast.Module): return
     # find '__all__' property
     node = tree.node
-    if isinstance(node, ast.Stmt):
-      nodes = node.nodes
+    if type(node) is list:
+      nodes = node
     else:
       nodes = [node]
     for node in nodes:
       if not isinstance(node, ast.Assign): continue
       if not isinstance(node.expr, ast.List): continue
       for n in node.nodes:
-        if isinstance(n, ast.AssName) and n.name == '__all__':
+        if isinstance(n, ast.Assign) and n.name == '__all__':
           self.all_names = [ n.value for n in node.expr.nodes
-                             if isinstance(n, ast.Const) and isinstance(n.value, str) ]
+                             if #isinstance(n, ast.Const) and 
+                                     isinstance(n.value, str) ]
     return
 
   def import_all(self, space):
