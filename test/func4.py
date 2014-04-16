@@ -1,13 +1,15 @@
 #!/usr/bin/python
 
 def foo(a,b):
-  print (a,b)
+  print((a,b))
 
-def bar(a,(b,c),*d,**e):
-  print (a,b,c,d,e)
+def bar(a, xxx_todo_changeme,*d,**e):
+  (b,c) = xxx_todo_changeme
+  print((a,b,c,d,e))
 
-def baz(a,b=2,(c,d)=(3,'b'),**e):
-  print (a,b,c,d,e)
+def baz(a,b=2, xxx_todo_changeme1=(3,'b'),**e):
+  (c,d) = xxx_todo_changeme1
+  print((a,b,c,d,e))
 
 foo(1,2)
 foo(a=1,b=2)

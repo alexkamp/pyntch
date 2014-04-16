@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
-from compiler import ast
-from pyntch.typenode import CompoundTypeNode
-from pyntch.typenode import TypeChecker
+import ast
+from pyntch.typenode import CompoundTypeNode, TypeChecker
 
 
 ##  Variable
@@ -62,7 +61,7 @@ class Namespace(object):
     return self.get_var(name)
 
   def __iter__(self):
-    return self.vars.iteritems()
+    return iter(self.vars.items())
 
   def get_name(self):
     if self.parent_space:
@@ -96,7 +95,7 @@ class Namespace(object):
     from pyntch.config import ErrorConfig
 
     if isinstance(tree, ast.Module):
-      self.register_names(tree.node)
+      self.register_names(tree.body)
       
     # global
     elif isinstance(tree, ast.Global):
@@ -218,7 +217,7 @@ class Namespace(object):
           try:
             module = tree._module.load_module(modname)[-1]
             self.import_all(module.space)
-          except ModuleNotFound, e:
+          except ModuleNotFound as e:
             ErrorConfig.module_not_found(e.name)
         else:
           self.register_var(asname or name)
@@ -278,9 +277,9 @@ class Namespace(object):
     elif isinstance(tree, ast.List):
       for node in tree.nodes:
         self.register_names(node)
-    elif isinstance(tree, ast.Set):
-      for node in tree.nodes:
-        self.register_names(node)
+#    elif isinstance(tree, ast.Set):
+#      for node in tree.nodes:
+#        self.register_names(node)
     elif isinstance(tree, ast.Dict):
       for (k,v) in tree.items:
         self.register_names(k)
@@ -381,7 +380,7 @@ class Namespace(object):
     if space.all_names:
       names = space.all_names
     else:
-      names = [ k for k in space.vars.iterkeys() if not k.startswith('_') ]
+      names = [ k for k in space.vars.keys() if not k.startswith('_') ]
     for k in names:
       try:
         self.vars[k] = space.vars[k]

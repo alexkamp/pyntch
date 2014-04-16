@@ -3,5 +3,5 @@
 f = (lambda x: (lambda y: x(y)))
 
 while 1:
-  print f
+  print(f)
   f=f(f)

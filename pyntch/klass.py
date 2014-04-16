@@ -1,17 +1,8 @@
 #!/usr/bin/env python
 
-try:
-  from xml.etree.cElementTree import Element
-except ImportError:
-  from xml.etree.ElementTree import Element
-from pyntch.typenode import CompoundTypeNode
-from pyntch.typenode import UndefinedTypeNode
-from pyntch.typenode import NodeTypeError
-from pyntch.typenode import NodeAttrError
-from pyntch.typenode import NodeAssignError
-from pyntch.typenode import BuiltinType
-from pyntch.typenode import BuiltinObject
-from pyntch.typenode import TypeChecker
+from pyntch.typenode import CompoundTypeNode, UndefinedTypeNode, \
+     NodeTypeError, NodeAttrError, NodeAssignError, BuiltinType, BuiltinObject, \
+     TypeChecker, Element
 from pyntch.namespace import Namespace
 from pyntch.module import TreeReporter
 from pyntch.frame import ExecutionFrame
@@ -220,10 +211,10 @@ class PythonClassType(ClassType, TreeReporter):
       out.write('class %s:' % self.name)
     out.indent(+1)
     blocks = set( child.name for child in self.children )
-    for (name, attr) in self.attrs.iteritems():
+    for (name, attr) in self.attrs.items():
       if name in blocks or not attr.types: continue
       out.write_value('class.'+name, attr)
-    for (name, attr) in self.instance.attrs.iteritems():
+    for (name, attr) in self.instance.attrs.items():
       if name in blocks or not attr.types: continue
       out.write_value('instance.'+name, attr)
     for child in self.children:
@@ -234,8 +225,7 @@ class PythonClassType(ClassType, TreeReporter):
 
   def showxml(self, out):
     (module,lineno) = self.loc
-    out.start_xmltag('class', name=self.name,
-                     loc='%s:%s' % (module.get_name(), lineno))
+    out.start_xmltag('class', name=self.name)
     for frame in self.frames:
       (module,lineno) = frame.getloc()
       out.show_xmltag('caller',
@@ -244,10 +234,10 @@ class PythonClassType(ClassType, TreeReporter):
       if base is self: continue
       out.show_xmltag('base', name=base.typename())
     blocks = set( child.name for child in self.children )
-    for (name, attr) in self.attrs.iteritems():
+    for (name, attr) in self.attrs.items():
       if name in blocks or not attr.types: continue
       out.show_xmlvalue('classattr', attr, name=name)
-    for (name, attr) in self.instance.attrs.iteritems():
+    for (name, attr) in self.instance.attrs.items():
       if name in blocks or not attr.types: continue
       out.show_xmlvalue('instanceattr', attr, name=name)
     for child in self.children:
@@ -307,7 +297,7 @@ class InstanceObject(BuiltinObject):
     self.attrs = {}
     self.boundmethods = {}
     BuiltinObject.__init__(self, klass)
-    for name in klass.attrs.iterkeys():
+    for name in klass.attrs.keys():
       self.attrs[name] = self.InstanceAttr(None, None, name, self.klass, self)
     return
   

@@ -1,29 +1,12 @@
 #!/usr/bin/env python
 
-try:
-  from xml.etree.cElementTree import Element
-except ImportError:
-  from xml.etree.ElementTree import Element
-from pyntch.typenode import CompoundTypeNode
-from pyntch.typenode import NodeTypeError
-from pyntch.typenode import NodeAttrError
-from pyntch.typenode import NodeAssignError
-from pyntch.typenode import UndefinedTypeNode
-from pyntch.typenode import BuiltinObject
-from pyntch.typenode import BuiltinType
-from pyntch.typenode import BuiltinCallable
-from pyntch.typenode import BuiltinMethod
-from pyntch.typenode import BuiltinConstMethod
+from pyntch.typenode import CompoundTypeNode, NodeTypeError, NodeAttrError, NodeAssignError, UndefinedTypeNode, Element
+from pyntch.typenode import BuiltinObject, BuiltinType, BuiltinCallable, BuiltinMethod, BuiltinConstMethod
 from pyntch.typenode import TypeChecker
 from pyntch.exception import StopIterationType
 from pyntch.frame import ExceptionCatcher
-from pyntch.basic_types import BoolType
-from pyntch.basic_types import IntType
-from pyntch.basic_types import StrType
-from pyntch.basic_types import NoneType
-from pyntch.basic_types import ANY
-from pyntch.expression import IterElement
-from pyntch.expression import MethodCall
+from pyntch.basic_types import BoolType, IntType, StrType, NoneType, ANY
+from pyntch.expression import IterElement, MethodCall
 from pyntch.config import ErrorConfig
 
 
@@ -220,7 +203,7 @@ class ListObject(BuiltinSequenceObject):
         params['key'] = args.pop(0)
       if args:
         params['reserved'] = args.pop(0)
-      for (k,v) in kwargs.iteritems():
+      for (k,v) in kwargs.items():
         if k in params:
           if params[k] != None:
             frame.raise_expt(ErrorConfig.NoKeywordArg1(k))
@@ -1057,7 +1040,7 @@ class DictType(BuiltinAggregateType):
       if node in self.cache_conv:
         obj = self.cache_conv[node]
       else:
-        obj = DictType.create_dict(key=[StrType.get_object()], value=kwargs.values())
+        obj = DictType.create_dict(key=[StrType.get_object()], value=list(kwargs.values()))
         self.cache_conv[node] = obj
       return obj
     if args:

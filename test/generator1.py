@@ -7,4 +7,4 @@ def disp(n):
 
 if __name__ == '__main__':
   for (a,b,c) in disp(10):
-    print a
+    print(a)

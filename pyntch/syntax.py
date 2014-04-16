@@ -1,34 +1,15 @@
 #!/usr/bin/env python
 
-from compiler import ast
-from pyntch.typenode import TypeNode
-from pyntch.typenode import UndefinedTypeNode
-from pyntch.typenode import CompoundTypeNode
-from pyntch.typenode import TypeChecker
-from pyntch.frame import ExecutionFrame
-from pyntch.frame import ExceptionCatcher
-from pyntch.frame import ExceptionMaker
+import ast
+from pyntch.typenode import TypeNode, UndefinedTypeNode, CompoundTypeNode, TypeChecker
+from pyntch.frame import ExecutionFrame, ExceptionCatcher, ExceptionMaker
 from pyntch.config import ErrorConfig
 from pyntch.klass import PythonClassType
-from pyntch.function import FuncType
-from pyntch.function import LambdaFuncType
-from pyntch.expression import ExpressionNode
-from pyntch.expression import AttrRef
-from pyntch.expression import SubRef
-from pyntch.expression import SliceRef
-from pyntch.expression import AttrAssign
-from pyntch.expression import SubAssign
-from pyntch.expression import SliceAssign
-from pyntch.expression import FunCall
-from pyntch.expression import BinaryOp
-from pyntch.expression import UnaryOp
-from pyntch.expression import AssignOp
-from pyntch.expression import CompareOp
-from pyntch.expression import BooleanOp
-from pyntch.expression import NotOp
-from pyntch.expression import IfExpOp
-from pyntch.expression import IterElement
-from pyntch.expression import TupleUnpack
+from pyntch.function import FuncType, LambdaFuncType
+from pyntch.expression import ExpressionNode, AttrRef, SubRef, SliceRef, \
+     AttrAssign, SubAssign, SliceAssign, \
+     FunCall, BinaryOp, UnaryOp, AssignOp, CompareOp, BooleanOp, NotOp, IfExpOp, \
+     IterElement, TupleUnpack
 
 
 ##  SliceObject
@@ -109,7 +90,7 @@ def build_assign(reporter, frame, space, n, v, evals):
 ##
 def build_expr(reporter, frame, space, tree, evals):
   from pyntch.basic_types import BUILTIN_OBJECT, IntType
-  from pyntch.aggregate_types import IterType, GeneratorType, ListType, SetType, DictType, TupleType
+  from pyntch.aggregate_types import IterType, GeneratorType, ListType, DictType, TupleType
 
   if isinstance(tree, ast.Const):
     typename = type(tree.value).__name__
@@ -169,9 +150,9 @@ def build_expr(reporter, frame, space, tree, evals):
     elements = [ build_expr(reporter, frame, space, node, evals) for node in tree.nodes ]
     expr = ListType.create_list(CompoundTypeNode(elements))
 
-  elif isinstance(tree, ast.Set):
-    elements = [ build_expr(reporter, frame, space, node, evals) for node in tree.nodes ]
-    expr = SetType.create_set(CompoundTypeNode(elements))
+#  elif isinstance(tree, ast.Set):
+#    elements = [ build_expr(reporter, frame, space, node, evals) for node in tree.nodes ]
+#    expr = SetType.create_set(CompoundTypeNode(elements))
 
   elif isinstance(tree, ast.Dict):
     items = [ (build_expr(reporter, frame, space, k, evals),
@@ -420,7 +401,7 @@ def build_stmt(reporter, frame, space, tree, evals, isfuncdef=False, parent_spac
     else:
       # re-raise
       frame.set_reraise()
-    return True
+#    return True # removed by 2to3
 
   # printnl
   elif isinstance(tree, (ast.Print, ast.Printnl)):
@@ -446,7 +427,7 @@ def build_stmt(reporter, frame, space, tree, evals, isfuncdef=False, parent_spac
         else:
           asname = name.split('.')[0]
           space[asname].bind(modules[0])
-      except ModuleNotFound, e:
+      except ModuleNotFound as e:
         ErrorConfig.module_not_found(e.name)
         
   elif isinstance(tree, ast.From):
@@ -458,9 +439,9 @@ def build_stmt(reporter, frame, space, tree, evals, isfuncdef=False, parent_spac
           try:
             obj = modules[-1].import_object(name)
             space[asname or name].bind(obj)
-          except ModuleNotFound, e:
+          except ModuleNotFound as e:
             ErrorConfig.module_not_found(modname+'.'+e.name)
-    except ModuleNotFound, e:
+    except ModuleNotFound as e:
       ErrorConfig.module_not_found(e.name)
   
   # global

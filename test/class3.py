@@ -24,8 +24,8 @@ class A(object):
 
 a = A('a')
 b = A('a')
-print a
+print(a)
 c = (a == b)
 d = (a + b)
 e = list(a)
-print e
+print(e)

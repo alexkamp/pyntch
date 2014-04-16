@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 import sys
-try:
-  from xml.etree.cElementTree import Element
-except ImportError:
-  from xml.etree.ElementTree import Element
-from pyntch.typenode import TypeNode
-from pyntch.typenode import CompoundTypeNode
-from pyntch.typenode import NodeTypeError
+from pyntch.typenode import TypeNode, CompoundTypeNode, NodeTypeError, Element
 
 
 ##  TracebackObject
@@ -52,7 +46,7 @@ class ExecutionFrame(CompoundTypeNode):
     if parent:
       assert isinstance(parent, ExecutionFrame), parent
       if self.expt_debug:
-        print >>sys.stderr, 'connect_expt: %r <- %r' % (parent, self)
+        print('connect_expt: %r <- %r' % (parent, self), file=sys.stderr)
       self.connect(parent.recv)
     return
 
@@ -83,7 +77,7 @@ class ExecutionFrame(CompoundTypeNode):
     if expt in self.raised: return
     self.raised.add(expt)
     if self.expt_debug:
-      print >>sys.stderr, 'raise_expt: %r <- %r' % (self, expt)
+      print('raise_expt: %r <- %r' % (self, expt), file=sys.stderr)
     TracebackObject(expt, self).connect(self.recv)
     return
 

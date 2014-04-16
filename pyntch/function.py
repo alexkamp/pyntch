@@ -1,16 +1,8 @@
 #!/usr/bin/env python
 
-try:
-  from xml.etree.cElementTree import Element
-except ImportError:
-  from xml.etree.ElementTree import Element
-from pyntch.typenode import CompoundTypeNode
-from pyntch.typenode import NodeTypeError
-from pyntch.typenode import NodeAttrError
-from pyntch.typenode import BuiltinType
-from pyntch.typenode import BuiltinObject
-from pyntch.namespace import Namespace
-from pyntch.namespace import Variable
+from pyntch.typenode import CompoundTypeNode, \
+     NodeTypeError, NodeAttrError, BuiltinType, BuiltinObject, Element
+from pyntch.namespace import Namespace, Variable
 from pyntch.config import ErrorConfig
 from pyntch.module import TreeReporter
 from pyntch.frame import ExecutionFrame
@@ -126,7 +118,7 @@ class FuncType(BuiltinType, TreeReporter):
     # Process keyword arguments first.
     varsleft = list(self.argvars)
     varikwargs = []
-    for (kwname, kwvalue) in kwargs.iteritems():
+    for (kwname, kwvalue) in kwargs.items():
       for var1 in varsleft:
         if isinstance(var1, Variable) and var1.name == kwname:
           var1.bind(kwvalue)
@@ -203,8 +195,7 @@ class FuncType(BuiltinType, TreeReporter):
 
   def showxml(self, out):
     (module,lineno) = self.frame.getloc()
-    out.start_xmltag('function', name=self.name,
-                     loc='%s:%s' % (module.get_name(), lineno))
+    out.start_xmltag('function', name=self.name)
     for frame in self.frames:
       (module,lineno) = frame.getloc()
       out.show_xmltag('caller', loc='%s:%s' % (module.get_name(), lineno))

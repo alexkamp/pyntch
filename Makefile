@@ -6,7 +6,7 @@ PREFIX=/usr/local
 SVN=svn
 RM=rm -f
 CP=cp -f
-PYTHON=python
+PYTHON=python3
 
 VERSION=`$(PYTHON) $(PACKAGE)/__init__.py`
 DISTFILE=$(PACKAGE)-$(VERSION).tar.gz

@@ -1,6 +1,6 @@
 # Makefile
 
-PYTHON=python
+PYTHON=python3
 TCHECKER=../tools/tchecker.py
 
 all:

@@ -70,15 +70,15 @@ def annot(fp, module):
     if i in lines:
       n = len(line)-len(line.lstrip())
       for x in lines[i]:
-        print ' '*n+x
-    print line
+        print(' '*n+x)
+    print(line)
   return
 
 # main
 def main(argv):
   import getopt
   def usage():
-    print 'usage: %s [-d] [-p basedir] xml files ...' % argv[0]
+    print('usage: %s [-d] [-p basedir] xml files ...' % argv[0])
     return 100
   try:
     (opts, args) = getopt.getopt(argv[1:], 'dp:')
@@ -101,7 +101,7 @@ def main(argv):
     try:
       module = modules[name]
     except KeyError:
-      print >>sys.stderr, 'not found: %r' % name
+      print('not found: %r' % name, file=sys.stderr)
       continue
     src = os.path.join(basedir, module.get('src'))
     fp = file(src)

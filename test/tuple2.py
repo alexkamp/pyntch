@@ -10,4 +10,4 @@ def tree(n):
 
 if __name__ == '__main__':
   a = tree(5)
-  print a
+  print(a)

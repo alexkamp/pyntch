@@ -27,14 +27,14 @@ l1 = +1
 l2 = -1
 l3 = ~1
 
-print 1 == 2
-print 1 != 2
-print 1 <= 2
-print 1 >= 2
-print 1 < 2
-print 1 > 2
-print 1 in 2
-print 1 not in 2
-print 1 and 1
-print 1 or 1
-print not 1
+print(1 == 2)
+print(1 != 2)
+print(1 <= 2)
+print(1 >= 2)
+print(1 < 2)
+print(1 > 2)
+print(1 in 2)
+print(1 not in 2)
+print(1 and 1)
+print(1 or 1)
+print(not 1)

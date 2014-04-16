@@ -4,6 +4,7 @@
 ##
 
 import sys
+import collections
 try:
   from xml.etree.cElementTree import Element
 except ImportError:
@@ -41,16 +42,13 @@ class TypeNode(object):
     return
   
   @classmethod
-  def run(klass, iteration=sys.maxint):
-    i = 0
-    while i < iteration and klass.procs:
+  def run(klass):
+    while klass.procs:
       if klass.verbose:
-        print >>sys.stderr, ('processing(%d): %d nodes (%d left)' %
-                             (i, klass.nodes, len(klass.procs)))
+        print('processing: %d nodes (%d left)' % (klass.nodes, len(klass.procs)), file=sys.stderr)
       (procs, klass.procs) = (klass.procs, set())
       for (proc,obj) in procs:
         proc(obj)
-      i += 1
     return
   
   def __init__(self, types):
@@ -68,9 +66,9 @@ class TypeNode(object):
   # The receiver parameter is either CompoundTypeNode object or
   # a function object that receives a value every time it changed.
   def connect(self, receiver):
-    assert callable(receiver)
+    assert isinstance(receiver, collections.Callable)
     if self.debug:
-      print >>sys.stderr, 'connect: %r -> %r' % (self, receiver)
+      print('connect: %r -> %r' % (self, receiver), file=sys.stderr)
     if receiver in self.sendto: return False
     self.sendto.append(receiver)
     self.schedule(receiver, self)
@@ -95,9 +93,9 @@ class TypeNode(object):
     return False
   
   def desctxt(self, _):
-    raise NotImplementedError, self.__class__
+    raise NotImplementedError(self.__class__)
   def descxml(self, _):
-    raise NotImplementedError, self.__class__
+    raise NotImplementedError(self.__class__)
 
 
 ##  SimpleTypeNode
@@ -329,7 +327,7 @@ class BuiltinCallable(object):
     return self.process_args(frame, anchor, args, kwargs)
 
   def process_args(self, frame, anchor, args, kwargs):
-    raise NotImplementedError, self.__class__
+    raise NotImplementedError(self.__class__)
 
 
 ##  BuiltinConstCallable

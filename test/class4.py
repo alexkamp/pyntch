@@ -7,7 +7,7 @@ def foo(x):
       self.x = str(x)
       return
   b = A()
-  print (A.a, b.x)
+  print((A.a, b.x))
   return b
 
 foo(123)

@@ -27,11 +27,11 @@ d4 = dict.fromkeys([1,2,3])
 d2.update({'a':2})
 d2.update([(1,'b')])
 
-e1 = a1.has_key('abc')
-e2 = a2.items()
-e3 = a2.keys()
-e4 = a2.values()
-e5 = a2.iteritems()
-e6 = a2.iterkeys()
-e7 = a2.itervalues()
+e1 = 'abc' in a1
+e2 = list(a2.items())
+e3 = list(a2.keys())
+e4 = list(a2.values())
+e5 = iter(a2.items())
+e6 = iter(a2.keys())
+e7 = iter(a2.values())
 

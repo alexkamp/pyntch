@@ -17,7 +17,7 @@ def bar():
 def baz():
   try:
     raise 'this should be propagated'
-  except E, e:
+  except E as e:
     pass
 
 def boz():

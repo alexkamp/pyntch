@@ -1,15 +1,9 @@
 #!/usr/bin/env python
 
-from pyntch.typenode import SimpleTypeNode
-from pyntch.typenode import CompoundTypeNode
-from pyntch.typenode import NodeTypeError
-from pyntch.typenode import NodeAttrError
-from pyntch.typenode import NodeAssignError
-from pyntch.typenode import TypeChecker
-from pyntch.typenode import SequenceTypeChecker
+from pyntch.typenode import SimpleTypeNode, CompoundTypeNode, NodeTypeError, NodeAttrError, NodeAssignError
+from pyntch.typenode import TypeChecker, SequenceTypeChecker
 from pyntch.exception import StopIterationType
-from pyntch.frame import ExecutionFrame
-from pyntch.frame import ExceptionCatcher
+from pyntch.frame import ExecutionFrame, ExceptionCatcher
 from pyntch.config import ErrorConfig
 
 
@@ -308,8 +302,8 @@ class FunCall(ExpressionNode):
 
   def __repr__(self):
     return ('<call %r(%s)>' %
-            (self.func, ', '.join(map(repr, self.args) +
-                                  [ '%s=%r' % (k,v) for (k,v) in self.kwargs.iteritems() ])))
+            (self.func, ', '.join(list(map(repr, self.args)) +
+                                  [ '%s=%r' % (k,v) for (k,v) in self.kwargs.items() ])))
 
   def recv_func(self, _):
     for obj in self.func:
@@ -721,7 +715,7 @@ class TupleUnpack(ExpressionNode):
 
   def __init__(self, frame, anchor, tupobj, nelements, strict=True):
     self.tupobj = tupobj
-    self.elements = [ CompoundTypeNode() for _ in xrange(nelements) ]
+    self.elements = [ CompoundTypeNode() for _ in range(nelements) ]
     self.strict = strict
     self.received = set()
     ExpressionNode.__init__(self, frame, anchor)
@@ -787,10 +781,10 @@ class TupleSlice(ExpressionNode):
           if self.length != len(obj.elements):
             self.raise_expt(ErrorConfig.NotUnpackable(obj))
           else:
-            for i in xrange(self.length):
+            for i in range(self.length):
               obj.elements[self.start+i].connect(self.recv)
         else:
-          for i in xrange(self.start, len(obj.elements)):
+          for i in range(self.start, len(obj.elements)):
             obj.elements[i].connect(self.recv)
       else:
         # Unpack a variable-length tuple or other iterable.

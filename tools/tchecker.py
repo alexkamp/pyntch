@@ -13,7 +13,7 @@ from pyntch.config import ErrorConfig
 def main(argv):
   import getopt
   def usage():
-    print 'usage: %s [-d] [-q] [-a] [-i iteration] [-c config] [-C key=val] [-D] [-p pythonpath] [-P stubpath] [-o output] [-t format] [file ...]' % argv[0]
+    print('usage: %s [-d] [-q] [-a] [-i iteration] [-c config] [-C key=val] [-D] [-p pythonpath] [-P stubpath] [-o output] [-t format] [file ...]' % argv[0])
     return 100
   try:
     (opts, args) = getopt.getopt(argv[1:], 'dqai:c:CDp:P:o:t:')
@@ -27,7 +27,7 @@ def main(argv):
   showall = False
   format = 'txt'
   verbose = 1
-  iteration = sys.maxint
+  iteration = sys.maxsize
   modpath = []
   stubpath = [stubdir]
   output = None
@@ -68,20 +68,20 @@ def main(argv):
         modules.append(Interpreter.load_file(name, path, modpath))
       else:
         modules.append(Interpreter.load_module(name, modpath)[-1])
-    except ModuleNotFound, e:
-      print >>sys.stderr, 'module not found:', name
+    except ModuleNotFound as e:
+      print('module not found:', name, file=sys.stderr)
   if showall:
     modules = Interpreter.get_all_modules()
   if ErrorConfig.unfound_modules:
-    print >>sys.stderr, 'modules not found:', ', '.join(sorted(ErrorConfig.unfound_modules))
+    print('modules not found:', ', '.join(sorted(ErrorConfig.unfound_modules)), file=sys.stderr)
   TypeNode.run(iteration=iteration)
   TypeChecker.check()
   MustBeDefinedNode.check()
   ExceptionCatcher.check()
   TypeNode.run(iteration=iteration)
   if verbose:
-    print >>sys.stderr, ('total files=%d, lines=%d in %.2fsec' %
-                         (Interpreter.files, Interpreter.lines, time.time()-t))
+    print(('total files=%d, lines=%d in %.2fsec' %
+                         (Interpreter.files, Interpreter.lines, time.time()-t)), file=sys.stderr)
   outfp = sys.stdout
   if output:
     outfp = file(output, 'w')

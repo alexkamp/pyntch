@@ -6,5 +6,5 @@ def fact(x):
   return x * fact(fact(x)+'B')
 
 if __name__ == '__main__':
-  print fact(10)
+  print(fact(10))
 
